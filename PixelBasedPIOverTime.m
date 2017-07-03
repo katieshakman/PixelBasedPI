@@ -9,7 +9,7 @@ clear; close all;
 
 %% Specify parameters as desired
 maxImDepth = 3; % Maximum number of colors/channels in each frame of movie.
-sampleEveryNFrames = 1000; % At what intervals should PI be computed?  Use a lower number for faster runtime.
+sampleEveryNFrames = 200; % At what intervals should PI be computed?  Use a lower number for faster runtime.
 radiusRangeLarge = [490 510]; % For detection of circular arena border. 
 diskSize = 25; 
 %% Set up the path to include JAABA's ufmf2avi and its dependencies
@@ -99,6 +99,7 @@ numFramesSubsampled = floor(numFrames/sampleEveryNFrames);
 frCnt = 0; % initialize counter for frames reached
 PIfrPx = nan(size(numFramesSubsampled,1)); % Initialize; will hold pixelwise PI at each frame
 PIfrCnt = 0; % counts for how many frames we have calculated the PI 
+xTickLabels = cell(size(1,numFramesSubsampled)); 
 % Start again from beginning of video: 
 v.CurrentTime = 0; 
 while hasFrame(v) % 
@@ -113,9 +114,13 @@ while hasFrame(v) %
         sumBC = sum(sum(thisFrameBC));
         PIfrCnt = PIfrCnt + 1;
         PIfrPx(PIfrCnt) = (sumAD-sumBC)/(sumAD+sumBC);
+        xTickLabels{PIfrCnt} = frCnt; 
     end
 end
 %% Show final images and plot 
 figure; imshow(thisFrameAD); title('thisFrameAD')
 figure; imshow(thisFrameBC); title('thisFrameBC')
 figure; plot(1:length(PIfrPx),PIfrPx); title('PIfrPx'); 
+ax = gca; 
+ax.XTickLabel = xTickLabels; 
+title('PI Over Time'); xlabel('Frame Number'); ylabel('PI'); 
