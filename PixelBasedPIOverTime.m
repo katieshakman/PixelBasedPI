@@ -16,10 +16,10 @@ diskSize = 25;
 A = exist('ufmf2avi','file'); 
 while A == 0 
     try
-        addpath(genpath('/Users/katherineshakman/Documents/MATLAB/JAABA-master/')); % for iMac
+        addpath(genpath('JAABA-master/')); % guesses there may be a JAABA subfolder within the current folder
         A = 2; 
     catch
-        disp('Could not find the JAABA package.');  
+        disp('Could not find the JAABA package.  If you have JAABA installed, please add it to the search path.  If not, install JAABA from http://jaaba.sourceforge.net/ or select an avi file for processing. ');  
         A = -1; 
     end
 end
