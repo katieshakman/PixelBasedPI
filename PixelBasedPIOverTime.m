@@ -96,18 +96,16 @@ figure; imshow(meanADcirc); title('mean AD circ')
 %% Compute average dark pixels in AD vs BC over time
 numFrames = v.Duration*v.FrameRate; 
 numFramesSubsampled = floor(numFrames/sampleEveryNFrames); 
-frCnt = 0; % initialize counter for frames reached
 PIfrPx = nan(size(numFramesSubsampled,1)); % Initialize; will hold pixelwise PI at each frame
 PIfrCnt = 0; % counts for how many frames we have calculated the PI 
 
 % check on existence of/create pool for parallel computing 
 poolObj = gcp('nocreate'); 
 if isempty(poolObj) % check if pool is already open
-    poolObj = parpool(4); 
+    poolObj = parpool; 
 end
 tic
 parfor frIndx = 1:numFrames 
-    frCnt = frCnt + 1; 
     thisFrame = read(v,frIndx);
     if mod(frIndx,sampleEveryNFrames) == 0
         thisFrame = im2double(thisFrame(:,:,1));
@@ -119,7 +117,7 @@ parfor frIndx = 1:numFrames
         PIfrCnt = PIfrCnt + 1;
         PIfrIndx(frIndx) = frIndx; 
         PIfrPx(frIndx) = (sumAD-sumBC)/(sumAD+sumBC);
-        if frCnt == numFrames
+        if frIndx == numFrames
             figure; imshow(thisFrameAD); title('thisFrameAD')
             figure; imshow(thisFrameBC); title('thisFrameBC')
         end
