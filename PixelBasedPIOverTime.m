@@ -50,7 +50,7 @@ v = VideoReader(aviName);
 sumV = zeros(v.Height, v.Width, maxImDepth);
 frNum = 0; 
 
-fr = im2double(readFrame(v));
+fr = im2double(read(v,1));
 frNum = frNum + 1; % Add to the count of total frames read.
 sumV = sumV + fr; % Add to the running sum.
 
@@ -96,16 +96,18 @@ figure; imshow(meanADcirc); title('mean AD circ')
 %% Compute average dark pixels in AD vs BC over time
 numFrames = v.Duration*v.FrameRate; 
 numFramesSubsampled = floor(numFrames/sampleEveryNFrames); 
-frCnt = 0; % initialize counter for frames reached
 PIfrPx = nan(size(numFramesSubsampled,1)); % Initialize; will hold pixelwise PI at each frame
 PIfrCnt = 0; % counts for how many frames we have calculated the PI 
-xTickLabels = cell(size(1,numFramesSubsampled)); 
-% Start again from beginning of video: 
-v.CurrentTime = 0; 
-while hasFrame(v) % 
-    thisFrame = readFrame(v);
-    frCnt = frCnt + 1; 
-    if mod(frCnt,sampleEveryNFrames) == 0
+
+% check on existence of/create pool for parallel computing 
+poolObj = gcp('nocreate'); 
+if isempty(poolObj) % check if pool is already open
+    poolObj = parpool; 
+end
+tic
+parfor frIndx = 1:numFrames 
+    thisFrame = read(v,frIndx);
+    if mod(frIndx,sampleEveryNFrames) == 0
         thisFrame = im2double(thisFrame(:,:,1));
         thisFrame = flies_detect(thisFrame, diskSize);
         thisFrameAD = thisFrame.*ADcirc_mask';
@@ -113,14 +115,33 @@ while hasFrame(v) %
         sumAD = sum(sum(thisFrameAD));
         sumBC = sum(sum(thisFrameBC));
         PIfrCnt = PIfrCnt + 1;
-        PIfrPx(PIfrCnt) = (sumAD-sumBC)/(sumAD+sumBC);
-        xTickLabels{PIfrCnt} = frCnt; 
+        PIfrIndx(frIndx) = frIndx; 
+        PIfrPx(frIndx) = (sumAD-sumBC)/(sumAD+sumBC);
+        if frIndx == numFrames
+            figure; imshow(thisFrameAD); title('thisFrameAD')
+            figure; imshow(thisFrameBC); title('thisFrameBC')
+        end
+    else
+        PIfrIndx(frIndx) = nan; 
+        PIfrPx(frIndx) = nan; 
     end
 end
+toc
 %% Show final images and plot 
-figure; imshow(thisFrameAD); title('thisFrameAD')
-figure; imshow(thisFrameBC); title('thisFrameBC')
-figure; plot(1:length(PIfrPx),PIfrPx); title('PIfrPx'); 
-ax = gca; 
-ax.XTickLabel = xTickLabels; 
+PIfrIndx = PIfrIndx(~isnan(PIfrIndx)); 
+PIfrPx = PIfrPx(~isnan(PIfrPx)); 
+figure; plot(PIfrIndx,PIfrPx); title('PIfrPx'); 
 title('PI Over Time'); xlabel('Frame Number'); ylabel('PI'); 
+% Save PI values and the frames at which they were calculated: 
+matFilename = strcat(filename(7:end-4),'_PI.mat');
+save(matFilename, 'PIfrIndx', 'PIfrPx','filename'); 
+% Save the PI over Time plot as a jpg: 
+jpgFilename = strcat(filename(7:end-4),'_PI.jpg'); 
+saveas(gcf,jpgFilename); 
+figFilename = strcat(filename(7:end-4),'_PI.fig'); 
+saveas(gcf,figFilename); 
+try 
+    saveas(gcf,figFilename); 
+catch
+    disp('Could not save fig.'); 
+end
