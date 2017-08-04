@@ -6,19 +6,19 @@
 clear; close all; 
 
 %% Describe prefix to use to find movie files
-fileFinderToken = 'movie_Test*.ufmf'; 
+fileFinderToken = 'movie_*.ufmf'; 
 %% Select folder in which to do batch processing on subfolders. 
 startDir = pwd; % So we can start and end in the same place.
 
 masterDir = uigetdir(); 
 cd(masterDir); 
-itemList = dir(); 
+itemList = dir(); % Get list of possible subfolders
 dirNames = {itemList.name}; 
 dirNames = dirNames([itemList.isdir]);
-dirNames = dirNames( cellfun(@(x) length(x)>4, dirNames) );
+dirNames = dirNames( cellfun(@(x) length(x)>4, dirNames) ); % Cleaned up list of subfolders
 
 for dirIdx = 1:length(dirNames)
-    cd(dirNames{dirIdx}); 
+    cd(dirNames{dirIdx}); % Go into the specified subfolder
     pathname = pwd; 
     filenameList = dir(fileFinderToken); 
     for fileIdx = 1:length(filenameList)
@@ -31,4 +31,4 @@ for dirIdx = 1:length(dirNames)
     cd(masterDir);  
 end
 
-
+cd(startDir); % So we can start and end in the same place.
